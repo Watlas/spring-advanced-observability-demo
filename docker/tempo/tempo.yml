@@ -1,0 +1,47 @@
+server:
+  http_listen_port: 3200
+  # Define a porta em que o servidor HTTP do Tempo escutará.
+
+distributor:
+  receivers: # Configura os receptores de traces. As configurações seguem o OpenTelemetry Collector.
+    jaeger: # Configura o receptor para Jaeger.
+      protocols: # Habilita vários protocolos para Jaeger.
+        thrift_http: # Habilita o recebimento de traces via HTTP com o protocolo Thrift.
+        grpc: # Habilita o recebimento de traces via gRPC.
+        thrift_binary: # Habilita o recebimento de traces no formato binário Thrift.
+        thrift_compact: # Habilita o recebimento de traces no formato compacto Thrift.
+    zipkin: # Habilita o receptor para Zipkin.
+    otlp: # Habilita o receptor para OpenTelemetry Protocol (OTLP).
+      protocols:
+        http: # Habilita o recebimento de traces via HTTP para OTLP.
+        grpc: # Habilita o recebimento de traces via gRPC para OTLP.
+    opencensus: # Habilita o receptor para OpenCensus.
+
+ingester:
+  max_block_duration: 5m # Define o tempo máximo para cortar o bloco atual e iniciar um novo. 
+
+compactor:
+  compaction:
+    block_retention: 1h # Define o tempo de retenção dos blocos de traces.
+
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo # Etiqueta externa para identificar a fonte dos dados.
+      cluster: docker-compose # Etiqueta externa para identificar o cluster.
+  storage:
+    path: /tmp/tempo/generator/wal # Define o caminho para o armazenamento do WAL (Write-Ahead Log) do gerador de métricas.
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write # Configura o endpoint para escrita remota em Prometheus.
+        send_exemplars: true # Habilita o envio de exemplares para Prometheus.
+
+storage:
+  trace:
+    backend: local # Define o backend de armazenamento para os traces como local.
+    wal:
+      path: /tmp/tempo/wal # Define o caminho para o WAL (Write-Ahead Log) do armazenamento de traces.
+    local:
+      path: /tmp/tempo/blocks # Define o caminho para o armazenamento de blocos de traces.
+
+overrides:
+  metrics_generator_processors: [service-graphs, span-metrics] # Habilita processadores do gerador de métricas específicos.

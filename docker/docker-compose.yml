@@ -1,0 +1,440 @@
+version: '3.7'
+
+services:
+  setup:
+    profiles:
+      - setup
+    build:
+      context: setup/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    init: true
+    volumes:
+      - ./setup/entrypoint.sh:/entrypoint.sh:ro,Z
+      - ./setup/lib.sh:/lib.sh:ro,Z
+      - ./setup/roles:/roles:ro,Z
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+      METRICBEAT_INTERNAL_PASSWORD: ${METRICBEAT_INTERNAL_PASSWORD:-}
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
+      MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  elasticsearch:
+    build:
+      context: elasticsearch/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - elasticsearch:/usr/share/elasticsearch/data:Z
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      discovery.type: single-node
+    networks:
+      - elk
+    restart: unless-stopped
+
+  logstash:
+    build:
+      context: logstash/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+    ports:
+      - "5044:5044"
+      - "50000:50000/tcp"
+      - "50000:50000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  kibana:
+    build:
+      context: kibana/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+    ports:
+      - "5601:5601"
+    environment:
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  fleet-server:
+    build:
+      context: ./fleet/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    user: root
+    volumes:
+      - fleet-server:/usr/share/elastic-agent/state:Z
+      - type: bind
+        source: /var/lib/docker/containers
+        target: /var/lib/docker/containers
+        read_only: true
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    environment:
+      FLEET_SERVER_ENABLE: '1'
+      FLEET_SERVER_INSECURE_HTTP: '1'
+      FLEET_SERVER_HOST: 0.0.0.0
+      FLEET_SERVER_POLICY_ID: fleet-server-policy
+      KIBANA_FLEET_SETUP: '1'
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:-}
+    ports:
+      - "8220:8220"
+    hostname: fleet-server
+    restart: on-failure
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+      - kibana
+
+  apm-server:
+    build:
+      context: ./fleet/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - apm-server:/usr/share/elastic-agent/state:Z
+    environment:
+      FLEET_ENROLL: '1'
+      FLEET_TOKEN_POLICY_NAME: Agent Policy APM Server
+      FLEET_INSECURE: '1'
+      FLEET_URL: http://fleet-server:8220
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD:-}
+    ports:
+      - "8200:8200"
+    hostname: apm-server
+    restart: on-failure
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+      - kibana
+      - fleet-server
+
+  filebeat:
+    build:
+      context: ./filebeat/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    user: root
+    command:
+      - -e
+      - --strict.perms=false
+    volumes:
+      - ./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+      - type: bind
+        source: /var/lib/docker/containers
+        target: /var/lib/docker/containers
+        read_only: true
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    environment:
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  heartbeat:
+    build:
+      context: heartbeat/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    command:
+      - -e
+      - --strict.perms=false
+    volumes:
+      - ./heartbeat/config/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:ro,Z
+    environment:
+      HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  metricbeat:
+    build:
+      context: ./metricbeat/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    user: root
+    command:
+      - -e
+      - --strict.perms=false
+      - --system.hostfs=/hostfs
+    volumes:
+      - ./metricbeat/config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro,Z
+      - type: bind
+        source: /
+        target: /hostfs
+        read_only: true
+      - type: bind
+        source: /sys/fs/cgroup
+        target: /hostfs/sys/fs/cgroup
+        read_only: true
+      - type: bind
+        source: /proc
+        target: /hostfs/proc
+        read_only: true
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    environment:
+      METRICBEAT_INTERNAL_PASSWORD: ${METRICBEAT_INTERNAL_PASSWORD:-}
+      MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  prometheus:
+    image: prom/prometheus:latest
+    networks:
+      - elk
+    volumes:
+      - prometheusdata:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--enable-feature=exemplar-storage"
+      - "--web.enable-remote-write-receiver"
+      - "--enable-feature=otlp-write-receiver"
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    depends_on:
+      - collector
+
+  loki:
+    image: grafana/loki:2.9.4
+    networks:
+      - elk
+    ports:
+      - "3100:3100"
+    volumes:
+      - lokidata:/loki
+      - ./loki/loki.yml:/etc/loki/local-config.yaml
+    command:
+      - "--config.file=/etc/loki/local-config.yaml"
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    networks:
+      - elk
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./grafana/grafana-dashboard.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-}
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+      - zipkin
+      - tempo
+
+  tempo:
+    image: grafana/tempo:2.3.1
+    networks:
+      - elk
+    command: [ "-config.file=/etc/tempo.yml" ]
+    volumes:
+      - tempodata:/tmp/tempo
+      - ./tempo/tempo.yml:/etc/tempo.yml
+    ports:
+      - "3200:3200"
+      - "4317"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.54.0
+    networks:
+      - elk
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: always
+    ports:
+      - "16686:16686"
+      - "4317"
+
+  zipkin:
+    image: openzipkin/zipkin:3.0.6
+    networks:
+      - elk
+    restart: always
+    ports:
+      - "9411:9411"
+
+  collector:
+    image: otel/opentelemetry-collector-contrib
+    networks:
+        - elk
+    command:
+      - --config=/etc/otelcol-contrib/otel-collector.yml
+      - --feature-gates=receiver.prometheusreceiver.UseCreatedMetric,receiver.prometheusreceiver.EnableNativeHistograms
+    volumes:
+      - ./collector/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml
+    restart: always
+    ports:
+      - "4317:4317" # Recebedor OTLP gRPC para traces, métricas e logs.
+      - "4318:4318" # Recebedor OTLP gRPC para traces, métricas e logs.
+      - "8889:8889"
+      - "8888:8888"
+    depends_on:
+      - loki
+      - jaeger
+      - zipkin
+      - tempo
+      - fleet-server
+
+  akhq:
+    image: tchiotludo/akhq
+    networks:
+        - kafka
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            docker-kafka-server:
+              properties:
+                bootstrap.servers: "kafka:9092"
+    ports:
+      - 8080:8080
+    links:
+      - kafka
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    networks:
+        - kafka
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "22181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    networks:
+        - kafka
+    restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 0
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  mongodb:
+    image: mongo:latest
+    networks:
+        - db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+      - ./mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+
+  mongo-express:
+    image: mongo-express:latest
+    networks:
+        - db
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_USER:-}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_PASSWORD:-}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER:-}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD:-}
+      ME_CONFIG_MONGODB_SERVER: mongodb
+
+  postgres:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_USER: ${POSTGRES_USER:-}
+
+networks:
+  elk:
+    driver: bridge
+  kafka:
+    driver: bridge
+  db:
+    driver: bridge
+  axon:
+    driver: bridge
+  minio:
+    driver: bridge
+
+volumes:
+  elasticsearch:
+  fleet-server:
+  apm-server:
+  prometheusdata:
+  lokidata:
+  grafanadata:
+  tempodata:
+  mongodata:
+  axonserverdata:
+  axonservereventsdata:
+  axonserverconfigdata:
+  miniodata:

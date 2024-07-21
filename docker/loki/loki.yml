@@ -1,0 +1,87 @@
+# Desabilita a autenticação, permitindo que qualquer um acesse o Loki sem autenticação.
+auth_enabled: false
+
+server:
+  # Define a porta na qual o servidor HTTP do Loki escutará.
+  http_listen_port: 3100
+  # Define a porta na qual o servidor gRPC do Loki escutará.
+  grpc_listen_port: 9096
+
+common:
+  # Endereço de instância, usado para comunicação interna entre componentes do Loki.
+  instance_addr: 127.0.0.1
+  # Prefixo de caminho usado para armazenar dados temporários.
+  path_prefix: /loki
+  storage:
+    filesystem:
+      # Diretório para armazenar chunks de logs.
+      chunks_directory: /loki/chunks
+      # Diretório para armazenar regras de alerta e gravação.
+      rules_directory: /loki/rules
+  # Fator de replicação para os dados, usado em clusters distribuídos.
+  replication_factor: 1
+  ring:
+    kvstore:
+      # Configuração de armazenamento de chave-valor para gerenciamento de cluster, mantido em memória.
+      store: inmemory
+
+query_range:
+  results_cache:
+    cache:
+      # Habilita o cache embutido para resultados de consultas.
+      embedded_cache:
+        enabled: true
+        # Define o tamanho máximo do cache embutido em megabytes.
+        max_size_mb: 100
+
+schema_config:
+  configs:
+    - from: 2020-10-24 # A configuração de esquema começa a partir desta data.
+      store: tsdb # Define o tipo de armazenamento para o banco de dados de séries temporais.
+      object_store: filesystem # Utiliza o sistema de arquivos local para armazenar objetos.
+      schema: v12 # Versão do esquema utilizado.
+      index:
+        prefix: index_ # Prefixo para índices de dados.
+        period: 24h # Cria novos índices a cada 24 horas.
+
+ruler:
+  # URL do Alertmanager para o envio de alertas.
+  alertmanager_url: http://localhost:9093
+
+limits_config:
+  # Não força nomes de métricas em logs.
+  enforce_metric_name: false
+  # Rejeita amostras antigas.
+  reject_old_samples: true
+  # Idade máxima para rejeitar amostras antigas.
+  reject_old_samples_max_age: 168h
+  # Taxa máxima de ingestão de dados em MB.
+  ingestion_rate_mb: 32
+  # Tamanho máximo de rajada de ingestão em MB.
+  ingestion_burst_size_mb: 36
+  # Permite escritas desordenadas.
+  unordered_writes: true
+  # Período de retenção dos dados.
+  retention_period: 72h
+
+compactor:
+  # Diretório de trabalho para operações de compactação.
+  working_directory: /loki/retention
+  # Define o tipo de armazenamento compartilhado.
+  shared_store: filesystem
+  # Intervalo de tempo entre cada compactação.
+  compaction_interval: 10m
+  # Habilita a retenção de dados baseada em tempo.
+  retention_enabled: true
+  # Delay antes de deletar dados antigos após o período de retenção.
+  retention_delete_delay: 2h
+  # Número de workers para deletar dados antigos.
+  retention_delete_worker_count: 150
+
+table_manager:
+  # Habilita a exclusão de dados baseada no período de retenção.
+  retention_deletes_enabled: true
+  # Define o período de retenção dos dados.
+  retention_period: 72h
+
+# A partir daqui, comentários explicam a política de envio de dados anônimos de uso e configuração para a Grafana Labs.
