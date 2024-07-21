@@ -1,4 +1,4 @@
-package br.com.watlas.orderservice.order;
+package br.com.watlas.userservice.user;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;

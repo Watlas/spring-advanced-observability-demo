@@ -1,12 +1,11 @@
-package br.com.watlas.orderservice.order;
+package br.com.watlas.productservice.product;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "produtos")
-public record User(
-        @Id ObjectId id,
+public record Product(
+        @Id Integer id,
         String name,
         String description,
         Double price

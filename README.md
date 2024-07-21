@@ -31,6 +31,10 @@ The **Spring Advanced Observability Demo** is a comprehensive project designed t
 techniques using the Spring Boot framework. This project integrates multiple powerful tools and technologies to provide
 a full-stack observability solution, including tracing, logging, and monitoring of microservices.
 
+## Architecture Overview
+
+![arch.gif](.github/arch.gif)
+
 ## Getting Started
 
 1. **Clone the repository**:
@@ -47,12 +51,32 @@ a full-stack observability solution, including tracing, logging, and monitoring 
    ```bash
     cd docker
     ```
-4. ** setup docker compose**:
+4. **setup docker compose**:
    ```bash
    docker-compose setup
    ```
 
-5.  **Start the services using Docker Compose**:
+5. **Start the services using Docker Compose**:
    ```bash
    docker-compose up -d
    ```
+To generate an order and observe the system's logs, metrics, and traces, follow these steps:
+
+1. Access the Order Service:
+   - Open your web browser and navigate to http://localhost:8527/swagger.
+   - Use the Swagger UI to generate a new order by interacting with the available API endpoints.
+
+2. Observe Logs, Metrics, and Traces:
+   
+   | Service       | User      | Password   | URL                                       |
+   |---------------|-----------|------------|-------------------------------------------|
+   | Kibana        | `elastic` | `changeme` | [localhost:5601](http://localhost:5601)   |
+   | Grafana       | `grafana` | `changeme` | [localhost:3000](http://localhost:3000)   |
+   | Prometheus    | -         | -          | [localhost:9090](http://localhost:9090)   |
+   | Jaeger        | -         | -          | [localhost:16686](http://localhost:16686) |
+   | Zipkin        | -         | -          | [localhost:9411](http://localhost:9411)   |
+   | Mongo Express | `mongo`   | `changeme` | [localhost:8081](http://localhost:8081)   |
+   | AKHQ          | -         | -          | [localhost:8080](http://localhost:8080)   |
+
+
+##

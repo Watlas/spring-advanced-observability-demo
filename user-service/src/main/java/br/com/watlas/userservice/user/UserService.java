@@ -1,4 +1,4 @@
-package br.com.watlas.orderservice.order;
+package br.com.watlas.userservice.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

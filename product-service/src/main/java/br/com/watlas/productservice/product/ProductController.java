@@ -1,4 +1,4 @@
-package br.com.watlas.orderservice.order;
+package br.com.watlas.productservice.product;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,17 +9,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/products")
 @RequiredArgsConstructor
-@Tag(name = "User", description = "User API")
-public class UserController {
+@Tag(name = "Product", description = "Product API")
+public class ProductController {
 
-    private final UserService userService;
+    private final ProductService productService;
 
     @PostMapping
-    @Operation(summary = "Create a user")
-    public User save(@RequestBody User user) {
-        return userService.save(user);
+    @Operation(summary = "Create a product")
+    public Product save(@RequestBody Product product) {
+        return productService.save(product);
     }
 
 }
