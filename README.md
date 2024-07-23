@@ -51,7 +51,7 @@ a full-stack observability solution, including tracing, logging, and monitoring 
     ```
 4. **setup docker compose**:
    ```bash
-   docker-compose setup
+    docker compose up setup
    ```
 5. **Build the services using Docker Compose**:
    ```bash
