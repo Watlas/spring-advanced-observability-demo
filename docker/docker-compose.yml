@@ -313,7 +313,7 @@ services:
   collector:
     image: otel/opentelemetry-collector-contrib
     networks:
-        - elk
+      - elk
     command:
       - --config=/etc/otelcol-contrib/otel-collector.yml
       - --feature-gates=receiver.prometheusreceiver.UseCreatedMetric,receiver.prometheusreceiver.EnableNativeHistograms
@@ -335,7 +335,7 @@ services:
   akhq:
     image: tchiotludo/akhq
     networks:
-        - kafka
+      - kafka
     environment:
       AKHQ_CONFIGURATION: |
         akhq:
@@ -351,7 +351,7 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     networks:
-        - kafka
+      - kafka
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -361,7 +361,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:latest
     networks:
-        - kafka
+      - kafka
     restart: always
     depends_on:
       - zookeeper
@@ -378,7 +378,7 @@ services:
   mongodb:
     image: mongo:latest
     networks:
-        - db
+      - mongo
     restart: always
     ports:
       - "27017:27017"
@@ -393,7 +393,7 @@ services:
   mongo-express:
     image: mongo-express:latest
     networks:
-        - db
+      - mongo
     depends_on:
       - mongodb
     ports:
@@ -406,22 +406,98 @@ services:
       ME_CONFIG_MONGODB_SERVER: mongodb
 
   postgres:
-    image: postgres
-    restart: always
+    image: postgres:14-alpine
+    networks:
+      - postgres
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
-      POSTGRES_USER: ${POSTGRES_USER:-}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
     volumes:
       - postgresdata:/var/lib/postgresql/data
 
+  user-service:
+    build:
+      context: ../user-service
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+      - elk
+      - kafka
+      - mongo
+    ports:
+      - "8525:8525"
+    environment:
+      MONGO_HOST: mongodb
+      MONGO_DB: ${MONGO_INITDB_DATABASE}
+      MONGO_USER: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      KAFKA_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+    depends_on:
+      - mongodb
+      - kafka
+      - collector
+
+  product-service:
+    build:
+      context: ../product-service
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+      - elk
+      - kafka
+      - mongo
+    ports:
+      - "8526:8526"
+    environment:
+      MONGO_HOST: mongodb
+      MONGO_DB: ${MONGO_INITDB_DATABASE}
+      MONGO_USER: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      KAFKA_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+    depends_on:
+      - mongodb
+      - kafka
+      - collector
+
+  order-service:
+    build:
+      context: ../order-service
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+      - elk
+      - kafka
+      - postgres
+    ports:
+      - "8527:8527"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+      USER_SERVICE_URL: http://user-service:8525
+    depends_on:
+      - user-service
+      - product-service
+      - mongodb
+      - kafka
+      - collector
 networks:
   elk:
     driver: bridge
   kafka:
     driver: bridge
-  db:
+  mongo:
+    driver: bridge
+  postgres:
+    driver: bridge
+  app-network:
     driver: bridge
 
 volumes:

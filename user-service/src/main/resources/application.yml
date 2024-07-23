@@ -3,12 +3,12 @@ spring:
         mongodb:
             host: ${MONGO_HOST:localhost}
             port: 27017
-            database: example
-            username: mongo
-            password: changeme
+            database: ${MONGO_DB:example}
+            username: ${MONGO_USER:mongo}
+            password: ${MONGO_PASSWORD:changeme}
             authentication-database: admin
     application:
-        name: order-service
+        name: user-service
     kafka:
         bootstrap-servers: ${KAFKA_SERVERS:localhost:29092}
         consumer:

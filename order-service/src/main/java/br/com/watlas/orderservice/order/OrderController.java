@@ -1,5 +1,6 @@
 package br.com.watlas.orderservice.order;
 
+import br.com.watlas.orderservice.order.dto.OrderDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,8 @@ public class OrderController {
 
     @PostMapping
     @Operation(summary = "Create a order")
-    public Order save(@RequestBody Order order) {
-        return orderService.save(order);
+    public OrderDTO save(@RequestBody OrderDTO orderDTO) {
+        return orderService.save(orderDTO);
     }
 
 }

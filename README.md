@@ -55,19 +55,23 @@ a full-stack observability solution, including tracing, logging, and monitoring 
    ```bash
    docker-compose setup
    ```
+5. **Build the services using Docker Compose**:
+   ```bash
+   docker-compose build
+   ```
 
-5. **Start the services using Docker Compose**:
+6. **Start the services using Docker Compose**:
    ```bash
    docker-compose up -d
    ```
-To generate an order and observe the system's logs, metrics, and traces, follow these steps:
+To generate an orderDTO and observe the system's logs, metrics, and traces, follow these steps:
 
 1. Access the Order Service:
-   - Open your web browser and navigate to http://localhost:8527/swagger.
-   - Use the Swagger UI to generate a new order by interacting with the available API endpoints.
+   - Open your web browser and navigate to http://localhost:8527/swagger-ui/index.html#/Order/save.
+   - Use the Swagger UI to generate a new orderDTO by interacting with the available API endpoints.
 
 2. Observe Logs, Metrics, and Traces:
-   
+
    | Service       | User      | Password   | URL                                       |
    |---------------|-----------|------------|-------------------------------------------|
    | Kibana        | `elastic` | `changeme` | [localhost:5601](http://localhost:5601)   |
@@ -78,5 +82,91 @@ To generate an order and observe the system's logs, metrics, and traces, follow 
    | Mongo Express | `mongo`   | `changeme` | [localhost:8081](http://localhost:8081)   |
    | AKHQ          | -         | -          | [localhost:8080](http://localhost:8080)   |
 
+3. Example POST request to create an orderDTO:
+   - Alternatively, you can use the following `curl` command to create an orderDTO:
 
-##
+   ```bash
+   curl -X POST http://localhost:8527/order \
+   -H "Content-Type: application/json" \
+   -d '{
+     "user": {
+       "name": "John Doe"
+     },
+     "product": {
+       "name": "Widget",
+       "description": "A very useful widget",
+       "price": 19.99
+     }
+   }'
+
+![img_2.png](.github/img_2.png)
+
+![img_1.png](.github/img_1.png)
+
+![img_5.png](.github/img_5.png)
+
+![img_13.png](.github/img_13.png)
+
+![img_12.png](.github/img_12.png)
+
+![img_3.png](.github/img_3.png)
+
+![img_4.png](.github/img_4.png)
+
+![img_6.png](.github/img_6.png)
+
+![img_7.png](.github/img_7.png)
+
+![img_8.png](.github/img_8.png)
+
+![img_9.png](.github/img_9.png)
+
+![img_11.png](.github/img_11.png)
+
+![img_10.png](.github/img_10.png)
+
+
+## Referências
+
+### Spring Boot
+- [Spring Boot Documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/)
+- [Spring Boot GitHub Repository](https://github.com/spring-projects/spring-boot)
+- [Building an Application with Spring Boot](https://spring.io/guides/gs/spring-boot/)
+
+### Docker
+- [Docker Documentation](https://docs.docker.com/)
+- [Docker GitHub Repository](https://github.com/docker/docker-ce)
+- [Getting Started with Docker](https://www.docker.com/get-started)
+
+### OpenTelemetry
+- [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
+- [OpenTelemetry GitHub Repository](https://github.com/open-telemetry/opentelemetry-java)
+- [OpenTelemetry Spring Boot Instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation/spring/spring-boot)
+
+### Elastic Stack
+- [Elasticsearch Documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+- [Logstash Documentation](https://www.elastic.co/guide/en/logstash/current/index.html)
+- [Kibana Documentation](https://www.elastic.co/guide/en/kibana/current/index.html)
+- [Elastic APM Documentation](https://www.elastic.co/guide/en/apm/get-started/current/index.html)
+- [Fleet and Elastic Agent](https://www.elastic.co/guide/en/fleet/current/index.html)
+- [Docker ELK](https://github.com/deviantony/docker-elk)
+
+### Grafana
+- [Grafana Documentation](https://grafana.com/docs/grafana/latest/)
+- [Grafana GitHub Repository](https://github.com/grafana/grafana)
+- [Getting Started with Grafana](https://grafana.com/docs/grafana/latest/getting-started/getting-started-prometheus/)
+
+### Prometheus
+- [Prometheus Documentation](https://prometheus.io/docs/introduction/overview/)
+- [Prometheus GitHub Repository](https://github.com/prometheus/prometheus)
+- [Getting Started with Prometheus](https://prometheus.io/docs/prometheus/latest/getting_started/)
+
+### Jaeger
+- [Jaeger Documentation](https://www.jaegertracing.io/docs/latest/)
+- [Jaeger GitHub Repository](https://github.com/jaegertracing/jaeger)
+- [Getting Started with Jaeger](https://www.jaegertracing.io/docs/latest/getting-started/)
+
+### Zipkin
+- [Zipkin Documentation](https://zipkin.io/pages/documentation.html)
+- [Zipkin GitHub Repository](https://github.com/openzipkin/zipkin)
+- [Getting Started with Zipkin](https://zipkin.io/pages/quickstart)
