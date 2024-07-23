@@ -19,8 +19,6 @@
 [![Kafka](https://img.shields.io/badge/Kafka-231F20?logo=apachekafka&logoColor=white)](https://kafka.apache.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Mongo Express](https://img.shields.io/badge/Mongo_Express-47A248?logo=mongodb&logoColor=white)](https://github.com/mongo-express/mongo-express)
-[![Axon Server](https://img.shields.io/badge/Axon%20Server-4527A0?logo=axoniq&logoColor=white)](https://axoniq.io/)
-[![MinIO](https://img.shields.io/badge/MinIO-00A3E0?logo=minio&logoColor=white)](https://min.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Java](https://img.shields.io/badge/Java-007396?logo=java&logoColor=red)](https://www.java.com/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
