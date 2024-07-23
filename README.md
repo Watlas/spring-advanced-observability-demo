@@ -99,30 +99,46 @@ To generate an orderDTO and observe the system's logs, metrics, and traces, foll
      }
    }'
 
+## Some things you will be able to see when uploading this project
+
+### APM Service Map
 ![img_2.png](.github/img_2.png)
 
+### APM Traces
 ![img_1.png](.github/img_1.png)
 
+### APM Dependencies
 ![img_5.png](.github/img_5.png)
 
+### Dashboard for overview of the system
 ![img_13.png](.github/img_13.png)
 
+
+### Kibana Data Discovery
 ![img_12.png](.github/img_12.png)
 
+### Agent Management with Fleet
 ![img_3.png](.github/img_3.png)
 
+### Cluster Overview
 ![img_4.png](.github/img_4.png)
 
+### Grafana Dashboard for Spring  
 ![img_6.png](.github/img_6.png)
 
+### Grafana Dashboard for OpenTelemetry
 ![img_7.png](.github/img_7.png)
 
+### Monitoring Trace with Jaeger
 ![img_8.png](.github/img_8.png)
 
+### Monitoring Trace Details with Jaeger
 ![img_9.png](.github/img_9.png)
 
+### Monitoring Trace with Zipkin
 ![img_11.png](.github/img_11.png)
 
+### Monitoring Service Map with Zipkin
 ![img_10.png](.github/img_10.png)
 
 
